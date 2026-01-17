@@ -147,21 +147,14 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-        // VERCEL DEPLOYMENT TIPS:
-        // 1. Ensure this file is named exactly 'index.html'
-        // 2. Ensure it is in the root directory of your project.
-        // 3. If you have a vercel.json, make sure it doesn't have conflicting rewrites.
-        
         let firebaseConfig;
         try {
-            // Priority 1: Environment variable injection (standard in this environment)
             if (typeof __firebase_config !== 'undefined' && __firebase_config) {
                 firebaseConfig = JSON.parse(__firebase_config);
             } else {
-                // Priority 2: Manual fallback for local/Vercel usage
                 firebaseConfig = {
                     apiKey: "YOUR_API_KEY",
                     authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -172,7 +165,7 @@
                 };
             }
         } catch (e) {
-            console.error("Firebase config missing or invalid.");
+            console.error("Firebase config missing.");
         }
 
         const app = initializeApp(firebaseConfig);
@@ -181,7 +174,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'blox-source-pro';
 
         const STAFF_ACCOUNTS = [
-            { username: 'BeanOwner', password: '@lesam625', role: 'Admin' },
+            { username: 'SourceMaster', password: '@lesam625', role: 'Admin' },
             { username: 'LeadDev', password: '@lesam625', role: 'Admin' },
             { username: 'AssetExpert', password: '@lesam625', role: 'Contributor' },
             { username: 'ScriptSpecialist', password: '@lesam625', role: 'Contributor' },
@@ -209,13 +202,8 @@
         let currentCategory = "All";
         let searchText = "";
 
-        const state = {
-            thumbnail: null,
-            file: null,
-            fileName: null
-        };
+        const state = { thumbnail: null, file: null, fileName: null };
 
-        // --- Auth Logic ---
         async function init() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -224,7 +212,7 @@
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("Auth initialization failed:", err);
+                console.error("Auth init error:", err);
             }
         }
 
@@ -243,7 +231,7 @@
                     updateUI();
                     listenToGames();
                 } catch (err) {
-                    console.error("Profile fetch error:", err);
+                    console.error("Profile error:", err);
                 }
             }
         });
@@ -262,36 +250,27 @@
             }
         }
 
-        // --- Data Logic ---
         function listenToGames() {
-            try {
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'));
-                onSnapshot(q, (snap) => {
-                    allGames = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-                        .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                    renderGrid();
-                }, (err) => {
-                    console.error("Firestore listener error:", err);
-                });
-            } catch (e) {
-                console.error("Failed to start listener:", e);
-            }
+            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'));
+            onSnapshot(q, (snap) => {
+                allGames = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                renderGrid();
+            }, (err) => console.error("Listener error:", err));
         }
 
         function renderGrid() {
             const grid = document.getElementById('grid');
             if (!grid) return;
-            
             const filtered = allGames.filter(g => {
                 const matchCat = currentCategory === "All" || g.category === currentCategory;
                 const matchSearch = g.title.toLowerCase().includes(searchText) || g.description.toLowerCase().includes(searchText);
                 return matchCat && matchSearch;
             });
-
             grid.innerHTML = filtered.map(g => `
                 <div class="group flex flex-col">
                     <div class="aspect-video relative overflow-hidden border-2 border-[#222] mb-6 group-hover:border-blue-600 transition-all">
-                        ${g.thumbnail ? `<img src="${g.thumbnail}" class="w-full h-full object-cover grayscale-hover" alt="${g.title}">` : 
+                        ${g.thumbnail ? `<img src="${g.thumbnail}" class="w-full h-full object-cover grayscale-hover">` : 
                         `<div class="w-full h-full flex items-center justify-center bg-[#111]"><i data-lucide="layers" class="w-16 h-16 text-neutral-800"></i></div>`}
                         <div class="absolute bottom-0 right-0 bg-blue-600 px-4 py-2 text-[10px] font-black uppercase">${g.category}</div>
                     </div>
@@ -312,11 +291,10 @@
         }
 
         // --- Interaction ---
-        const categories = ["All", "Games", "Scripts", "Models", "Other"];
         const catContainer = document.getElementById('categoryContainer');
         if (catContainer) {
-            catContainer.innerHTML = categories.map(c => `
-                <button class="cat-btn px-8 py-4 text-xs font-black uppercase tracking-widest border-2 transition-all ${c === 'All' ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#222] text-white hover:border-white'}" data-cat="${c}">
+            catContainer.innerHTML = ["All", "Games", "Scripts", "Models", "Other"].map(c => `
+                <button class="cat-btn px-8 py-4 text-xs font-black uppercase tracking-widest border-2 border-[#222] text-white transition-all ${c === 'All' ? 'bg-blue-600 border-blue-600' : 'hover:border-white'}" data-cat="${c}">
                     ${c}
                 </button>
             `).join('');
@@ -325,59 +303,55 @@
                 btn.onclick = () => {
                     currentCategory = btn.dataset.cat;
                     document.querySelectorAll('.cat-btn').forEach(b => {
-                        b.className = `cat-btn px-8 py-4 text-xs font-black uppercase tracking-widest border-2 transition-all ${b.dataset.cat === currentCategory ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#222] text-white hover:border-white'}`;
+                        b.classList.toggle('bg-blue-600', b.dataset.cat === currentCategory);
+                        b.classList.toggle('border-blue-600', b.dataset.cat === currentCategory);
                     });
                     renderGrid();
                 }
             });
         }
 
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.oninput = (e) => {
-                searchText = e.target.value.toLowerCase();
-                renderGrid();
-            };
-        }
+        document.getElementById('searchInput').oninput = (e) => {
+            searchText = e.target.value.toLowerCase();
+            renderGrid();
+        };
 
-        // --- Modals ---
         document.getElementById('authBtn').onclick = () => {
-            if (profile?.isStaff) {
-                signOut(auth).then(() => window.location.reload());
-            } else {
-                document.getElementById('loginModal').classList.remove('hidden');
-            }
+            if (profile?.isStaff) signOut(auth).then(() => window.location.reload());
+            else document.getElementById('loginModal').classList.remove('hidden');
         };
 
         document.getElementById('closeLogin').onclick = () => document.getElementById('loginModal').classList.add('hidden');
         
         document.getElementById('submitLogin').onclick = async () => {
-            const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass').value;
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
             const acc = STAFF_ACCOUNTS.find(a => a.username === u && a.password === p);
+            
             if (acc && currentUser) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
                     const updated = { ...profile, role: acc.role, username: acc.username, isStaff: true };
-                    await setDoc(docRef, updated);
+                    // We use setDoc here to ensure it creates if doesn't exist
+                    await setDoc(docRef, updated, { merge: true });
                     profile = updated;
                     updateUI();
                     document.getElementById('loginModal').classList.add('hidden');
                 } catch (err) {
-                    console.error("Login update failed:", err);
+                    console.error("Staff session set error:", err);
+                    // Fallback: update local state anyway if Firestore fails but creds were correct
+                    profile = { ...profile, role: acc.role, username: acc.username, isStaff: true };
+                    updateUI();
+                    document.getElementById('loginModal').classList.add('hidden');
                 }
             } else {
-                alert("Login Failed");
+                alert("Invalid Credentials");
             }
         };
 
-        const openUploadBtn = document.getElementById('openUploadBtn');
-        if (openUploadBtn) {
-            openUploadBtn.onclick = () => document.getElementById('uploadModal').classList.remove('hidden');
-        }
+        document.getElementById('openUploadBtn').onclick = () => document.getElementById('uploadModal').classList.remove('hidden');
         document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
 
-        // File handling
         document.getElementById('thumbBtn').onclick = () => document.getElementById('thumbInput').click();
         document.getElementById('thumbInput').onchange = (e) => {
             if (!e.target.files.length) return;
@@ -410,33 +384,21 @@
             const title = document.getElementById('uploadTitle').value;
             const cat = document.getElementById('uploadCategory').value;
             const desc = document.getElementById('uploadDesc').value;
-
-            if (!title || !state.file) return alert("Missing info");
-
+            if (!title || !state.file) return alert("Title and File required");
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'games'), {
-                    title,
-                    category: cat,
-                    description: desc,
-                    link: state.file,
-                    thumbnail: state.thumbnail,
-                    fileName: state.fileName,
-                    authorId: currentUser.uid,
-                    authorName: profile.username,
+                    title, category: cat, description: desc,
+                    link: state.file, thumbnail: state.thumbnail, fileName: state.fileName,
+                    authorId: currentUser.uid, authorName: profile.username,
                     createdAt: serverTimestamp()
                 });
-
                 document.getElementById('uploadModal').classList.add('hidden');
-                alert("Upload Successful!");
-            } catch (err) {
-                console.error("Upload error:", err);
-                alert("Upload failed. Check console for details.");
-            }
+                alert("Success!");
+            } catch (err) { alert("Upload failed"); }
         };
 
         init();
         lucide.createIcons();
     </script>
 </body>
-
 </html>
