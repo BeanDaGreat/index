@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLOXSOURCE - THE ARCHIVE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #000;
+            color: #fff;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #2563eb !important;
+            outline: none;
+        }
+
+        .grayscale-hover {
+            filter: grayscale(100%);
+            transition: filter 0.3s ease;
+        }
+
+        .grayscale-hover:hover {
+            filter: grayscale(0%);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app">
+        <!-- Navbar -->
+        <nav class="border-b-2 border-[#222] bg-black sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-extrabold uppercase tracking-tighter">
+                        BLOX<span class="text-blue-600">SOURCE</span>
+                    </h1>
+                </div>
+
+                <div class="hidden md:flex flex-1 max-w-md mx-12 relative">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Search..."
+                        class="w-full bg-[#111] border-2 border-[#222] py-3 pl-12 pr-4 text-sm font-bold"
+                    >
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button id="authBtn" class="px-6 py-2 border-2 border-[#222] text-xs font-bold uppercase hover:bg-white hover:text-black transition-all">
+                        Login
+                    </button>
+                    <button id="openUploadBtn" class="hidden bg-blue-600 text-white px-6 py-2 border-2 border-blue-600 font-bold hover:bg-transparent transition-all uppercase text-xs">
+                        Upload
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-8 py-20">
+            <!-- Hero -->
+            <div class="mb-24">
+                <h2 class="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-6 leading-none">
+                    Find. <br>Download. <br><span class="text-blue-600">Build.</span>
+                </h2>
+                <p class="text-neutral-500 text-lg max-w-md font-bold uppercase">
+                    A simple place to get game files and scripts.
+                </p>
+            </div>
+
+            <!-- Category Filter -->
+            <div id="categoryContainer" class="flex flex-wrap gap-4 mb-16">
+                <!-- Categories injected here -->
+            </div>
+
+            <!-- Content Grid -->
+            <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16">
+                <!-- Items injected here -->
+            </div>
+        </main>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/95 p-4">
+            <div class="w-full max-w-sm border-4 border-white p-12 text-center bg-black">
+                <h3 class="text-3xl font-black uppercase mb-12">Login</h3>
+                <div class="space-y-6">
+                    <input type="text" id="loginUser" placeholder="Username" class="w-full bg-transparent border-2 border-[#333] p-5 text-sm font-bold uppercase text-white">
+                    <input type="password" id="loginPass" placeholder="Password" class="w-full bg-transparent border-2 border-[#333] p-5 text-sm font-bold uppercase text-white">
+                    <button id="submitLogin" class="w-full bg-white text-black font-black py-5 text-sm uppercase hover:bg-blue-600 hover:text-white transition-all">Submit</button>
+                    <button id="closeLogin" class="text-[10px] font-bold uppercase text-neutral-600 hover:text-white pt-6 block mx-auto">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="uploadModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 p-4">
+            <div class="bg-black border-4 border-[#222] w-full max-w-2xl p-10 relative">
+                <button id="closeUpload" class="absolute top-6 right-6 p-2 border-2 border-[#222] hover:bg-white hover:text-black">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+                
+                <h3 class="text-3xl font-black uppercase mb-10">New Upload</h3>
+                
+                <div class="space-y-8">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div id="thumbBtn" class="aspect-video bg-[#111] border-2 border-[#222] flex flex-col items-center justify-center hover:bg-[#1a1a1a] cursor-pointer relative overflow-hidden">
+                            <input type="file" id="thumbInput" accept="image/*" class="hidden">
+                            <div id="thumbPreview" class="absolute inset-0 hidden"><img src="" class="w-full h-full object-cover"></div>
+                            <i data-lucide="image" class="w-8 h-8 text-neutral-700 mb-2"></i>
+                            <span class="text-[10px] font-bold uppercase">Image</span>
+                        </div>
+                        <div id="fileBtn" class="aspect-video bg-[#111] border-2 border-[#222] flex flex-col items-center justify-center hover:bg-[#1a1a1a] cursor-pointer overflow-hidden">
+                            <input type="file" id="fileInput" class="hidden">
+                            <i id="fileIcon" data-lucide="file-box" class="w-8 h-8 text-neutral-700 mb-2"></i>
+                            <span id="fileLabel" class="text-[10px] font-bold uppercase px-4 text-center truncate w-full">File</span>
+                        </div>
+                    </div>
+
+                    <input type="text" id="uploadTitle" placeholder="Title" class="w-full bg-black border-2 border-[#222] p-5 text-sm font-bold uppercase text-white">
+                    
+                    <select id="uploadCategory" class="w-full bg-black border-2 border-[#222] p-5 text-sm font-bold uppercase text-white">
+                        <option value="Games">Games</option>
+                        <option value="Scripts">Scripts</option>
+                        <option value="Models">Models</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <textarea id="uploadDesc" rows="3" placeholder="Description" class="w-full bg-black border-2 border-[#222] p-5 text-sm font-bold uppercase text-white resize-none"></textarea>
+                    
+                    <button id="confirmUpload" class="w-full bg-blue-600 text-white font-black py-6 uppercase text-sm hover:bg-white hover:text-black transition-all">
+                        Confirm Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        // VERCEL DEPLOYMENT TIPS:
+        // 1. Ensure this file is named exactly 'index.html'
+        // 2. Ensure it is in the root directory of your project.
+        // 3. If you have a vercel.json, make sure it doesn't have conflicting rewrites.
+        
+        let firebaseConfig;
+        try {
+            // Priority 1: Environment variable injection (standard in this environment)
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                // Priority 2: Manual fallback for local/Vercel usage
+                firebaseConfig = {
+                    apiKey: "YOUR_API_KEY",
+                    authDomain: "YOUR_PROJECT.firebaseapp.com",
+                    projectId: "YOUR_PROJECT_ID",
+                    storageBucket: "YOUR_PROJECT.appspot.com",
+                    messagingSenderId: "YOUR_SENDER_ID",
+                    appId: "YOUR_APP_ID"
+                };
+            }
+        } catch (e) {
+            console.error("Firebase config missing or invalid.");
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'blox-source-pro';
+
+        const STAFF_ACCOUNTS = [
+            { username: 'SourceMaster', password: '@lesam625', role: 'Admin' },
+            { username: 'LeadDev', password: '@lesam625', role: 'Admin' },
+            { username: 'AssetExpert', password: '@lesam625', role: 'Contributor' },
+            { username: 'ScriptSpecialist', password: '@lesam625', role: 'Contributor' },
+            { username: 'DevKing', password: '@lesam625', role: 'Admin' },
+            { username: 'CodeNinja', password: '@lesam625', role: 'Contributor' },
+            { username: 'WorldBuilder', password: '@lesam625', role: 'Contributor' },
+            { username: 'ProjectLead', password: '@lesam625', role: 'Admin' },
+            { username: 'UIGuy', password: '@lesam625', role: 'Contributor' },
+            { username: 'MainDev', password: '@lesam625', role: 'Admin' },
+            { username: 'SubDev', password: '@lesam625', role: 'Contributor' },
+            { username: 'Helper1', password: '@lesam625', role: 'Contributor' },
+            { username: 'Helper2', password: '@lesam625', role: 'Contributor' },
+            { username: 'Moderator1', password: '@lesam625', role: 'Admin' },
+            { username: 'Moderator2', password: '@lesam625', role: 'Admin' },
+            { username: 'Tester1', password: '@lesam625', role: 'Contributor' },
+            { username: 'Tester2', password: '@lesam625', role: 'Contributor' },
+            { username: 'Supporter', password: '@lesam625', role: 'Contributor' },
+            { username: 'Artist', password: '@lesam625', role: 'Contributor' },
+            { username: 'Owner', password: '@lesam625', role: 'Admin' }
+        ];
+
+        let currentUser = null;
+        let profile = null;
+        let allGames = [];
+        let currentCategory = "All";
+        let searchText = "";
+
+        const state = {
+            thumbnail: null,
+            file: null,
+            fileName: null
+        };
+
+        // --- Auth Logic ---
+        async function init() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth initialization failed:", err);
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        profile = snap.data();
+                    } else {
+                        profile = { uid: user.uid, role: 'User', username: `User-${user.uid.slice(0,4)}`, isStaff: false };
+                        await setDoc(docRef, profile);
+                    }
+                    updateUI();
+                    listenToGames();
+                } catch (err) {
+                    console.error("Profile fetch error:", err);
+                }
+            }
+        });
+
+        function updateUI() {
+            const authBtn = document.getElementById('authBtn');
+            if (authBtn) authBtn.innerText = profile?.isStaff ? 'Logout' : 'Login';
+            
+            const uploadBtn = document.getElementById('openUploadBtn');
+            if (uploadBtn) {
+                if (profile?.role === 'Admin' || profile?.role === 'Contributor') {
+                    uploadBtn.classList.remove('hidden');
+                } else {
+                    uploadBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        // --- Data Logic ---
+        function listenToGames() {
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'games'));
+                onSnapshot(q, (snap) => {
+                    allGames = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                        .sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    renderGrid();
+                }, (err) => {
+                    console.error("Firestore listener error:", err);
+                });
+            } catch (e) {
+                console.error("Failed to start listener:", e);
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            if (!grid) return;
+            
+            const filtered = allGames.filter(g => {
+                const matchCat = currentCategory === "All" || g.category === currentCategory;
+                const matchSearch = g.title.toLowerCase().includes(searchText) || g.description.toLowerCase().includes(searchText);
+                return matchCat && matchSearch;
+            });
+
+            grid.innerHTML = filtered.map(g => `
+                <div class="group flex flex-col">
+                    <div class="aspect-video relative overflow-hidden border-2 border-[#222] mb-6 group-hover:border-blue-600 transition-all">
+                        ${g.thumbnail ? `<img src="${g.thumbnail}" class="w-full h-full object-cover grayscale-hover" alt="${g.title}">` : 
+                        `<div class="w-full h-full flex items-center justify-center bg-[#111]"><i data-lucide="layers" class="w-16 h-16 text-neutral-800"></i></div>`}
+                        <div class="absolute bottom-0 right-0 bg-blue-600 px-4 py-2 text-[10px] font-black uppercase">${g.category}</div>
+                    </div>
+                    <div class="flex flex-col flex-1">
+                        <h4 class="text-2xl font-black uppercase tracking-tighter mb-2">${g.title}</h4>
+                        <p class="text-sm text-neutral-500 mb-8 uppercase leading-relaxed line-clamp-2">${g.description}</p>
+                        <div class="mt-auto flex items-center justify-between pt-6 border-t-2 border-[#222]">
+                            <span class="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">BY ${g.authorName || 'Anon'}</span>
+                            <a href="${g.link}" download="${g.fileName || 'file'}" class="flex items-center gap-3 bg-white text-black px-6 py-3 text-xs font-black uppercase hover:bg-blue-600 hover:text-white transition-all">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- Interaction ---
+        const categories = ["All", "Games", "Scripts", "Models", "Other"];
+        const catContainer = document.getElementById('categoryContainer');
+        if (catContainer) {
+            catContainer.innerHTML = categories.map(c => `
+                <button class="cat-btn px-8 py-4 text-xs font-black uppercase tracking-widest border-2 transition-all ${c === 'All' ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#222] text-white hover:border-white'}" data-cat="${c}">
+                    ${c}
+                </button>
+            `).join('');
+
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.onclick = () => {
+                    currentCategory = btn.dataset.cat;
+                    document.querySelectorAll('.cat-btn').forEach(b => {
+                        b.className = `cat-btn px-8 py-4 text-xs font-black uppercase tracking-widest border-2 transition-all ${b.dataset.cat === currentCategory ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#222] text-white hover:border-white'}`;
+                    });
+                    renderGrid();
+                }
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.oninput = (e) => {
+                searchText = e.target.value.toLowerCase();
+                renderGrid();
+            };
+        }
+
+        // --- Modals ---
+        document.getElementById('authBtn').onclick = () => {
+            if (profile?.isStaff) {
+                signOut(auth).then(() => window.location.reload());
+            } else {
+                document.getElementById('loginModal').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('closeLogin').onclick = () => document.getElementById('loginModal').classList.add('hidden');
+        
+        document.getElementById('submitLogin').onclick = async () => {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            const acc = STAFF_ACCOUNTS.find(a => a.username === u && a.password === p);
+            if (acc && currentUser) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+                    const updated = { ...profile, role: acc.role, username: acc.username, isStaff: true };
+                    await setDoc(docRef, updated);
+                    profile = updated;
+                    updateUI();
+                    document.getElementById('loginModal').classList.add('hidden');
+                } catch (err) {
+                    console.error("Login update failed:", err);
+                }
+            } else {
+                alert("Login Failed");
+            }
+        };
+
+        const openUploadBtn = document.getElementById('openUploadBtn');
+        if (openUploadBtn) {
+            openUploadBtn.onclick = () => document.getElementById('uploadModal').classList.remove('hidden');
+        }
+        document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
+
+        // File handling
+        document.getElementById('thumbBtn').onclick = () => document.getElementById('thumbInput').click();
+        document.getElementById('thumbInput').onchange = (e) => {
+            if (!e.target.files.length) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                state.thumbnail = reader.result;
+                const prev = document.getElementById('thumbPreview');
+                prev.querySelector('img').src = reader.result;
+                prev.classList.remove('hidden');
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        document.getElementById('fileBtn').onclick = () => document.getElementById('fileInput').click();
+        document.getElementById('fileInput').onchange = (e) => {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                state.file = reader.result;
+                state.fileName = file.name;
+                document.getElementById('fileLabel').innerText = file.name;
+                document.getElementById('fileIcon').setAttribute('data-lucide', 'check-circle-2');
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('confirmUpload').onclick = async () => {
+            const title = document.getElementById('uploadTitle').value;
+            const cat = document.getElementById('uploadCategory').value;
+            const desc = document.getElementById('uploadDesc').value;
+
+            if (!title || !state.file) return alert("Missing info");
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'games'), {
+                    title,
+                    category: cat,
+                    description: desc,
+                    link: state.file,
+                    thumbnail: state.thumbnail,
+                    fileName: state.fileName,
+                    authorId: currentUser.uid,
+                    authorName: profile.username,
+                    createdAt: serverTimestamp()
+                });
+
+                document.getElementById('uploadModal').classList.add('hidden');
+                alert("Upload Successful!");
+            } catch (err) {
+                console.error("Upload error:", err);
+                alert("Upload failed. Check console for details.");
+            }
+        };
+
+        init();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
